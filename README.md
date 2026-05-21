@@ -100,8 +100,8 @@ Use this repo as evidence of production-minded backend execution: fast event han
 
 ## Related Private Repositories
 
-- `logicencoder/mexc-live-stats-backend-private`
-- `logicencoder/mexc-live-stats-plugin-private` (integration counterpart)
+- `logicencoder/mexc-live-stats-backend`
+- `logicencoder/mexc-live-stats-plugin` (integration counterpart)
 
 ## Author note
 

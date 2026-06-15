@@ -1,7 +1,5 @@
 # MEXC Live Stats — backend
 
-![MEXC Live Stats — backend powers realtime ingest while WordPress stays thin](assets/hostinger-cpu-memory.jpg)
-
 **FastAPI + PostgreSQL + Node SSR backend** for [logicencoder.com/mexc-app/](https://logicencoder.com/mexc-app/) and every **[/mexc/{SYMBOL}/](https://logicencoder.com/mexc/)** SEO page. The private service ingests MEXC spot trades over protobuf WebSockets, stores rolling history, computes 24h pair analytics, broadcasts live updates to browsers, and pushes finished snapshot payloads to WordPress. Traders see the dashboard through the plugin; this repo documents the server-side half of that product pair.
 
 ## Tech stack
@@ -21,13 +19,7 @@
 
 The public site lives on **WordPress shared hosting** (Hostinger). That environment is ideal for pages, shortcodes, sitemaps, and cached HTML — not for subscribing to an entire USDT spot fleet and writing millions of trades. The backend exists so **all heavy work stays off PHP**: persistent exchange sockets, deduplication, PostgreSQL, stats recomputation, MessagePack fan-out, and snapshot generation run on a **self-hosted Linux server** I operate, then push compact results to WordPress.
 
-This was a deliberate design and tuning exercise on low shared-hosting headroom. **More than 1,400 USDT spot pairs** stream through the MEXC pipeline in production; the same pattern powers **roughly 800 Gate.io pairs** on the Gate stats sibling. Realtime data still reaches browsers over WebSocket; REST and WordPress transients cover corporate networks that block WS. WordPress remains a **display, routing, and SEO layer** — not the database of record for ticks.
-
-After iteratively offloading ingest, batching writes, and narrowing what PHP regenerates on each request, shared hosting resource graphs show large margins on CPU, memory, PHP workers, throughput, IOPS, and process limits while both fleets run — evidence the split worked.
-
-![Hostinger shared hosting — disk throughput and PHP worker count](assets/hostinger-throughput-workers.jpg)
-
-![Hostinger shared hosting — storage IOPS and max processes](assets/hostinger-iops-processes.jpg)
+This was a deliberate design and tuning exercise on low shared-hosting headroom. **More than 1,400 USDT spot pairs** stream through the MEXC pipeline in production; the same async pattern powers **roughly 700 Gate.io pairs** on the Gate stats sibling. Realtime data still reaches browsers over WebSocket; REST and WordPress transients cover corporate networks that block WS. WordPress remains a **display, routing, and SEO layer** — not the database of record for ticks.
 
 Plugin overview: [mexc-live-stats-plugin-overview](https://github.com/logicencoder/mexc-live-stats-plugin-overview) covers the WordPress dashboard, Coin Manager, and visitor UI.
 
@@ -62,6 +54,16 @@ The backend exposes monitoring streams and metrics used by wp-admin **Monitor Da
 ## Not the trading bot
 
 **[mexc_trading_app](https://github.com/logicencoder/mexc_trading_app-overview)** is a separate local trading console with order placement. This backend ingests **public spot trades only** for the Logic Encoder stats site.
+
+## Shared hosting headroom (corroboration)
+
+Async ingest and aggregation run on **self-hosted Linux servers**; WordPress on shared hosting only receives finished payloads. The graphs below are **corroboration at the end** — feature documentation above stays primary. CPU, memory, PHP workers, throughput, IOPS, and process limits stay well below plan ceilings while **1,400+ MEXC** and **~700 Gate** pairs run.
+
+![Shared hosting — CPU and memory usage vs plan limits](assets/hostinger-cpu-memory.jpg)
+
+![Shared hosting — disk throughput and PHP worker count](assets/hostinger-throughput-workers.jpg)
+
+![Shared hosting — storage IOPS and max processes](assets/hostinger-iops-processes.jpg)
 
 Private code: [mexc-live-stats-backend](https://github.com/logicencoder/mexc-live-stats-backend)
 

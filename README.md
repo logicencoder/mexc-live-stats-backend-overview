@@ -21,7 +21,7 @@
 
 The public site lives on **WordPress shared hosting** (Hostinger). That environment is ideal for pages, shortcodes, sitemaps, and cached HTML — not for subscribing to an entire USDT spot fleet and writing millions of trades. The backend exists so **all heavy work stays off PHP**: persistent exchange sockets, deduplication, PostgreSQL, stats recomputation, MessagePack fan-out, and snapshot generation run on a **self-hosted Linux server** I operate, then push compact results to WordPress.
 
-This was a deliberate design and tuning exercise on low shared-hosting headroom. **More than 1,400 USDT spot pairs** stream through the MEXC pipeline in production; the same pattern powers **roughly 8,000+ Gate.io pairs** on the Gate stats sibling. Realtime data still reaches browsers over WebSocket; REST and WordPress transients cover corporate networks that block WS. WordPress remains a **display, routing, and SEO layer** — not the database of record for ticks.
+This was a deliberate design and tuning exercise on low shared-hosting headroom. **More than 1,400 USDT spot pairs** stream through the MEXC pipeline in production; the same pattern powers **roughly 800 Gate.io pairs** on the Gate stats sibling. Realtime data still reaches browsers over WebSocket; REST and WordPress transients cover corporate networks that block WS. WordPress remains a **display, routing, and SEO layer** — not the database of record for ticks.
 
 After iteratively offloading ingest, batching writes, and narrowing what PHP regenerates on each request, shared hosting resource graphs show large margins on CPU, memory, PHP workers, throughput, IOPS, and process limits while both fleets run — evidence the split worked.
 

@@ -65,4 +65,57 @@ See [REPOS.md](REPOS.md).
 
 ---
 
+## Feature examples (two per capability)
+
+#### Realtime MEXC trade ingest
+1. You restart the Python service after deploy and confirm startup logs show sharded MEXC V3 WebSocket connections for every enabled USDT pair.
+2. You watch ingest during a busy altcoin session and verify protobuf deal messages reach the trade queue without blocking REST or dashboard endpoints.
+
+#### PostgreSQL batched persistence
+1. You inspect monitoring JSON after a traffic spike and confirm the insert queue drains while connected client counts stay stable.
+2. You query recent trades for `BTCUSDT` and confirm rows appear in chronological order for tape backfill on the WordPress frontend.
+
+#### Rolling 24-hour analytics
+1. You open per-symbol stats and confirm OHLC, VWAP, buy/sell volume split, net flow, and hourly buckets match what the live dashboard shows.
+2. You switch coins on a per-pair SEO page and confirm on-demand stats refresh for that symbol without reloading the full fleet.
+
+#### Live WebSocket trade streaming
+1. You connect a browser client through the tunnel, subscribe to three USDT pairs, and confirm throttled trade frames arrive for each subscription.
+2. You send latency acknowledgements from the plugin and verify round-trip timing counters move in the monitoring dashboard.
+
+#### Bootstrap and coin fleet
+1. You load the MEXC app after a backend restart and confirm bootstrap returns symbols, cached stats, and precision metadata in one round trip.
+2. You add a newly listed pair via the coins API, reload symbols, and confirm the new market appears in bootstrap without duplicating entries.
+
+#### Symbol reload and dead-symbol checks
+1. You POST reload-symbols after editing the enabled-coins list and confirm WebSocket tasks restart with the updated fleet count.
+2. You run a health check that fails on dead symbols and prune delisted markets from sitemap before announcing a catalogue update.
+
+#### WordPress snapshot and schema sync
+1. You enable schema sync in environment config and confirm batched POSTs to the plugin cache-warmup route succeed in server logs.
+2. You temporarily shrink batch size during an incident and verify symbols still rotate through the sync pool without overwhelming shared hosting.
+
+#### Node SSR for SEO pages
+1. You request SSR HTML for `BTCUSDT` and confirm crawler meta tags and JSON-LD match the live stats API fields.
+2. You compare SSR output with the interactive app for the same symbol before publishing a plugin update.
+
+#### Operator monitoring dashboard
+1. You open the backend ops dashboard, connect to the dashboard WebSocket, and watch CPU, queue depth, and subscription health refresh live.
+2. You tail dashboard logs during a WordPress 403 incident without SSH access to the compute host.
+
+#### Broadcast throttle tuning
+1. You raise the global rate limit from the ops UI when egress spikes during a multi-coin rally and confirm smoother delivery to subscribers.
+2. You restore default throttle settings after testing and confirm connected clients receive the updated broadcast profile.
+
+#### REST trade history
+1. You request six hours of trades for a thin market to backfill a frozen tape without replaying the live WebSocket stream.
+2. You omit the symbol parameter on purpose and confirm the API returns a clear validation error instead of scanning the full table.
+
+#### WebSocket access controls
+1. You enable production auth and confirm direct non-tunnel connections to the public socket are rejected while tunnel clients authenticate with the API key.
+2. You test staging by connecting without a key first, then sending a valid authenticate frame and confirming subscriptions unlock.
+
+
+---
+
 **Made by [Logic Encoder](https://logicencoder.com)** · [GitHub](https://github.com/logicencoder) · [Contact](https://logicencoder.com/contact/)

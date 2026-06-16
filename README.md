@@ -41,17 +41,13 @@ A companion **Express + React SSR** process renders **[/mexc/{SYMBOL}/](https://
 
 ## Operator surfaces
 
-The backend exposes monitoring streams and metrics used by wp-admin **Monitor Dashboard** in the plugin: messages per second, download rate, reconnect counts, subscription health, PostgreSQL row totals, connected client counts, and structured boot logs (connect, auth, bulk subscribe). Operators diagnose “stale public site” without SSH — though the compute still runs on the self-hosted server, not on shared hosting.
-
-## Not the trading bot
-
-**[mexc_trading_app](https://github.com/logicencoder/mexc_trading_app-overview)** is a separate local trading console with order placement. This backend ingests **public spot trades only** for the Logic Encoder stats site.
+The backend exposes monitoring streams and metrics used by wp-admin **Monitor Dashboard** in the plugin: messages per second, download rate, reconnect counts, subscription health, PostgreSQL row totals, connected client counts, and structured boot logs (connect, auth, bulk subscribe). Operators diagnose “stale public site” without SSH — compute runs on the self-hosted server; WordPress receives finished payloads.
 
 ## Shared hosting headroom
 
-The public site lives on **WordPress shared hosting**. That environment is ideal for pages, shortcodes, sitemaps, and cached HTML — not for subscribing to an entire USDT spot fleet and writing millions of trades. This backend exists so **all heavy work stays off PHP**: persistent exchange sockets, deduplication, PostgreSQL, stats recomputation, MessagePack fan-out, and snapshot generation run on **self-hosted Linux servers** with async workers, then push compact results to WordPress.
+The public site lives on **WordPress shared hosting** — ideal for pages, shortcodes, sitemaps, and cached HTML. This backend runs the heavy path on **self-hosted Linux**: persistent exchange sockets, deduplication, PostgreSQL, stats recomputation, MessagePack fan-out, and snapshot generation, then pushes compact results to WordPress.
 
-**More than 1,400 USDT spot pairs** stream through the MEXC pipeline in production; the same async pattern powers **roughly 700 Gate.io pairs** on the Gate stats sibling. Realtime data still reaches browsers over WebSocket; REST and WordPress transients cover corporate networks that block WS. WordPress remains a **display, routing, and SEO layer** — not the database of record for ticks.
+**More than 1,400 USDT spot pairs** stream through the MEXC pipeline in production; the same async pattern powers **roughly 700 Gate.io pairs** on the Gate stats sibling. Realtime data still reaches browsers over WebSocket; REST and WordPress transients cover corporate networks that block WS. WordPress is the **display, routing, and SEO layer**; tick history lives in PostgreSQL on the backend.
 
 After iteratively offloading ingest, batching writes, and narrowing what PHP regenerates on each request, shared-hosting resource graphs show large margins on CPU, memory, PHP workers, throughput, IOPS, and process limits.
 

@@ -65,7 +65,7 @@ See [REPOS.md](REPOS.md).
 
 ---
 
-## Feature examples (two per capability)
+## Operator workflows
 
 #### Realtime MEXC trade ingest
 1. You restart the Python service after deploy and confirm startup logs show sharded MEXC V3 WebSocket connections for every enabled USDT pair.

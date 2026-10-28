@@ -1,121 +1,61 @@
-# MEXC Live Stats — backend
+# MEXC Live Statistics — Market Data Service
 
-**FastAPI + PostgreSQL + Node SSR backend** for [logicencoder.com/mexc-app/](https://logicencoder.com/mexc-app/) and every **[/mexc/{SYMBOL}/](https://logicencoder.com/mexc/)** SEO page. The private service ingests MEXC spot trades over protobuf WebSockets, stores rolling history, computes 24h pair analytics, broadcasts live updates to browsers, and pushes finished snapshot payloads to WordPress. Traders see the dashboard through the plugin; this repo documents the server-side half of that product pair.
+A price chart is only one view of a market. MEXC Live Statistics brings recent trades, daily market context and pair-level analytics together so visitors can examine activity rather than repeatedly assembling it from separate feeds.
+
+The service supplies the connected MEXC dashboard and WordPress market pages. Operators maintain the monitored market collection while visitors move from a broad catalogue to a focused pair.
 
 ## Tech stack
 
 | Layer | Technologies |
-|-------|--------------|
-| Ingest | Python 3, FastAPI, uvicorn, MEXC V3 protobuf WebSocket, async workers |
-| Storage | PostgreSQL, batched async inserts, rolling-window retention |
-| Realtime | WebSocket with MessagePack frames, subscription rooms per symbol |
-| Analytics | SQL aggregates — 24h OHLC, volume splits, trade-size tiers, hourly buckets |
-| SEO feed | JSON bundles for Node SSR, snapshot POST to WordPress REST ingest |
-| SSR service | Node.js, Express, React server render for crawler HTML + JSON-LD |
-| Ops | Operator dashboard streams, monitoring endpoints, symbol reload API |
-| Hosting | Self-hosted Linux server for compute; WordPress on shared hosting for public pages |
+|---|---|
+| Application | Python, FastAPI |
+| Market data | MEXC, Protocol Buffers |
+| Analytics | PostgreSQL |
+| Web presentation | JavaScript, Node.js, React |
+| Publishing | WordPress |
 
-## Realtime trade ingest
+## Follow live market activity
 
-The service maintains long-lived **MEXC spot WebSocket** connections using generated protobuf bindings. Each deal message is normalized (symbol, price, size, side, timestamp, trade id), queued, and inserted into PostgreSQL in batches so the hot path never blocks on disk fsync per tick. Symbol subscriptions are sharded across connections with exchange precision cached locally so UI formatting matches MEXC metadata without per-client REST calls.
+Recent trades and current market information keep the selected pair connected to ongoing activity. Exchange-provided price and amount precision support a readable presentation across markets with different scales.
 
-Pair list reload is **operator-triggered** — intentional so production does not flap subscriptions during exchange maintenance. Stale trades fall out of the configured rolling window so queries and snapshot builds stay bounded.
+A visitor can begin with the broad market collection and move into a pair when its behaviour deserves closer inspection. Live delivery supports following that session without repeatedly rebuilding the page.
 
-## PostgreSQL analytics and REST
+## Put daily figures in context
 
-Trades land in a dedicated **`trades`** table. Background workers and scheduled refresh recompute per-symbol **24h open, high, low, volumes** in base asset and USDT, **buy/sell imbalance**, trade-count ratios, **VWAP**, volatility hints, **trade-size histograms** (small / medium / large tiers), largest print metadata, and **hourly buckets** for charts. These aggregates feed both the public stats API and snapshot generation — visitors query consistent numbers whether they load live WebSocket panels or SSR HTML.
+Daily open, high, low and volume information sits alongside measures such as buy/sell balance, trade counts, VWAP and trade-size distributions. Hourly activity and notable-print information add detail beyond the latest price.
 
-REST endpoints expose bootstrap coin lists, per-symbol stats, supplemental trade history, dead-symbol diffs, orderbook snapshots, and operator monitoring JSON. The WordPress plugin proxies some admin calls; browsers hit the backend directly for live streams.
+These views answer complementary questions about a pair. Compare the chart with the available activity before deciding whether a movement deserves additional research.
 
-## WebSocket broadcast
+## Maintain a useful market catalogue
 
-Browser clients open a **MessagePack-compressed WebSocket** to receive trades and headline stats without polling. Subscription changes when a user switches pairs on a per-coin page or loads the fleet grid. An internal broadcast queue fans out normalized frames to every connected session; operator dashboards use separate dashboard sockets for throughput, latency, and log tailing without mixing admin noise into the public tape.
+Operators can review the tracked market collection, refresh supported symbols and inspect entries that are no longer available. Pair metadata keeps market names and precision connected to the information being published.
 
-## Snapshot push to WordPress
+Catalogue maintenance is a deliberate operating task. It gives the owner a way to align the markets offered on the site with those the service is actually following.
 
-On a schedule (and on demand), the backend assembles **snapshot payloads** — structured stats, Schema.org fields, optional chart images — and **POSTs** them to the WordPress plugin REST ingest route with an API key. WordPress writes static HTML under `/snapshots/` and updates transients so crawlers and social previews see full content even when JavaScript is disabled. The plugin never recomputes pair analytics in PHP; it stores and serves what the backend already validated.
+## Connect live browsing with discoverable pages
 
-## Node SSR for SEO pages
+The same market information supports interactive browsing and search-friendly pair pages. Published statistics, related links and structured discovery information make a market accessible from more than one entry point.
 
-A companion **Express + React SSR** process renders **[/mexc/{SYMBOL}/](https://logicencoder.com/mexc/)** HTML for search engines: KPI strip, bot-activity section, 24h hourly table, JSON-LD `Dataset` block, and internal links. SSR fetches the same Python API bundles the live dashboard uses, so rankings reflect live fields rather than marketing copy. SSR and the snapshot pipeline are complementary — both improve discoverability from different entry paths.
+This is useful when visitors arrive at a specific pair from a search or announcement rather than beginning at the main dashboard. The pair remains the centre of the experience.
 
-## Operator surfaces
+## Keep WordPress publication supplied
 
-The backend exposes monitoring streams and metrics used by wp-admin **Monitor Dashboard** in the plugin: messages per second, download rate, reconnect counts, subscription health, PostgreSQL row totals, connected client counts, and structured boot logs (connect, auth, bulk subscribe). Operators diagnose “stale public site” without SSH — compute runs on the self-hosted server; WordPress receives finished payloads.
+The connected WordPress product receives prepared market information for its pages and publishing tools. Publication checks help distinguish a healthy market feed from a page that needs attention.
 
-## Shared hosting headroom
+The service and plugin have related roles: one maintains the observed market information, while the other provides the website experience around it.
 
-The public site lives on **WordPress shared hosting** — ideal for pages, shortcodes, sitemaps, and cached HTML. This backend runs the heavy path on **self-hosted Linux**: persistent exchange sockets, deduplication, PostgreSQL, stats recomputation, MessagePack fan-out, and snapshot generation, then pushes compact results to WordPress.
+## Investigate interruptions from the operating view
 
-**More than 1,400 USDT spot pairs** stream through the MEXC pipeline in production; the same async pattern powers **roughly 700 Gate.io pairs** on the Gate stats sibling. Realtime data still reaches browsers over WebSocket; REST and WordPress transients cover corporate networks that block WS. WordPress is the **display, routing, and SEO layer**; tick history lives in PostgreSQL on the backend.
+Monitoring brings connection state, trade activity, subscriptions, connected visitors and publication-related information together. Logs support following a connection problem without making the public market page an administration surface.
 
-After iteratively offloading ingest, batching writes, and narrowing what PHP regenerates on each request, shared-hosting resource graphs show large margins on CPU, memory, PHP workers, throughput, IOPS, and process limits.
+The operator can start with the symptom, inspect the relevant area and review the result. This keeps market maintenance connected to what visitors are trying to use.
 
-![Shared hosting — CPU and memory usage vs plan limits](assets/hostinger-cpu-memory.jpg)
-
-![Shared hosting — disk throughput and PHP worker count](assets/hostinger-throughput-workers.jpg)
-
-![Shared hosting — storage IOPS and max processes](assets/hostinger-iops-processes.jpg)
+---
 
 Private code: [mexc-live-stats-backend](https://github.com/logicencoder/mexc-live-stats-backend)
 
-Plugin overview: [mexc-live-stats-plugin-overview](https://github.com/logicencoder/mexc-live-stats-plugin-overview)
+[MEXC WordPress dashboard](https://github.com/logicencoder/mexc-live-stats-plugin-overview)
 
-See [REPOS.md](REPOS.md).
+See [REPOS.md](REPOS.md) for related repositories.
 
----
-
-## Operator workflows
-
-#### Realtime MEXC trade ingest
-1. You restart the Python service after deploy and confirm startup logs show sharded MEXC V3 WebSocket connections for every enabled USDT pair.
-2. You watch ingest during a busy altcoin session and verify protobuf deal messages reach the trade queue without blocking REST or dashboard endpoints.
-
-#### PostgreSQL batched persistence
-1. You inspect monitoring JSON after a traffic spike and confirm the insert queue drains while connected client counts stay stable.
-2. You query recent trades for `BTCUSDT` and confirm rows appear in chronological order for tape backfill on the WordPress frontend.
-
-#### Rolling 24-hour analytics
-1. You open per-symbol stats and confirm OHLC, VWAP, buy/sell volume split, net flow, and hourly buckets match what the live dashboard shows.
-2. You switch coins on a per-pair SEO page and confirm on-demand stats refresh for that symbol without reloading the full fleet.
-
-#### Live WebSocket trade streaming
-1. You connect a browser client through the tunnel, subscribe to three USDT pairs, and confirm throttled trade frames arrive for each subscription.
-2. You send latency acknowledgements from the plugin and verify round-trip timing counters move in the monitoring dashboard.
-
-#### Bootstrap and coin fleet
-1. You load the MEXC app after a backend restart and confirm bootstrap returns symbols, cached stats, and precision metadata in one round trip.
-2. You add a newly listed pair via the coins API, reload symbols, and confirm the new market appears in bootstrap without duplicating entries.
-
-#### Symbol reload and dead-symbol checks
-1. You POST reload-symbols after editing the enabled-coins list and confirm WebSocket tasks restart with the updated fleet count.
-2. You run a health check that fails on dead symbols and prune delisted markets from sitemap before announcing a catalogue update.
-
-#### WordPress snapshot and schema sync
-1. You enable schema sync in environment config and confirm batched POSTs to the plugin cache-warmup route succeed in server logs.
-2. You temporarily shrink batch size during an incident and verify symbols still rotate through the sync pool without overwhelming shared hosting.
-
-#### Node SSR for SEO pages
-1. You request SSR HTML for `BTCUSDT` and confirm crawler meta tags and JSON-LD match the live stats API fields.
-2. You compare SSR output with the interactive app for the same symbol before publishing a plugin update.
-
-#### Operator monitoring dashboard
-1. You open the backend ops dashboard, connect to the dashboard WebSocket, and watch CPU, queue depth, and subscription health refresh live.
-2. You tail dashboard logs during a WordPress 403 incident without SSH access to the compute host.
-
-#### Broadcast throttle tuning
-1. You raise the global rate limit from the ops UI when egress spikes during a multi-coin rally and confirm smoother delivery to subscribers.
-2. You restore default throttle settings after testing and confirm connected clients receive the updated broadcast profile.
-
-#### REST trade history
-1. You request six hours of trades for a thin market to backfill a frozen tape without replaying the live WebSocket stream.
-2. You omit the symbol parameter on purpose and confirm the API returns a clear validation error instead of scanning the full table.
-
-#### WebSocket access controls
-1. You enable production auth and confirm direct non-tunnel connections to the public socket are rejected while tunnel clients authenticate with the API key.
-2. You test staging by connecting without a key first, then sending a valid authenticate frame and confirming subscriptions unlock.
-
-
----
-
-**Made by [Logic Encoder](https://logicencoder.com)** · [GitHub](https://github.com/logicencoder) · [Contact](https://logicencoder.com/contact/)
+**[Logic Encoder](https://logicencoder.com)** · [GitHub](https://github.com/logicencoder) · [Contact](https://logicencoder.com/contact/)
